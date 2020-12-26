@@ -1,0 +1,22 @@
+{
+  "name": "gs-telegrammanagment",
+  "version": "0.0.1",
+  "description": "Managment for Pterodactyl 1.0 from telegram client",
+  "main": "index.js",
+  "dependencies": {
+    "nodeactyl": "^2.0.4",
+    "telebot": "^1.4.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Pterodactyl",
+    "Telegram",
+    "BolverBlitz",
+    "EBG"
+  ],
+  "author": "BolverBlitz",
+  "license": "AGPL-3.0"
+}
