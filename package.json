@@ -5,9 +5,11 @@
   "main": "index.js",
   "dependencies": {
     "nodeactyl": "^2.0.4",
+    "ping": "^0.4.0",
+    "request": "^2.88.2",
+    "systeminformation": "^4.33.4",
     "telebot": "^1.4.1"
   },
-  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
