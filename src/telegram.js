@@ -5,6 +5,8 @@ const ping = require('ping');
 const package = require('../package');
 const fs = require('fs');
 const request = require("request");
+const newI18n = require('new-i18n');
+const i18n = newI18n(__dirname + '/languages', ['en', 'de']);
 
 const Telebot = require('telebot');
 const bot = new Telebot({
@@ -12,6 +14,8 @@ const bot = new Telebot({
 	limit: 1000,
         usePlugins: ['commandButton']
 });
+
+var Time_started = new Date().getTime();
 
 /*Standart funktions Start|Alive|Help*/
 bot.on(/^\/alive/i, (msg) => {
@@ -27,13 +31,13 @@ bot.on(/^\/alive/i, (msg) => {
 				setTimeout(function(){
 				bot.deleteMessage(msg.chat.id,msg.message_id).catch(error => f.Elog('Error (deleteMessage):' + error.description));
 				}, 25000);
-            });
+            }).catch(error => console.log(error));
             bot.deleteMessage(msg.chat.id, msg.message_id).catch(error => f.Elog('Error (deleteMessage):' + error.description));
 		});
 	});
 });
 
-bot.on(/^\/help/i, (msg) => {
+bot.on([/^\/help/i, /^\/hilfe/i], (msg) => {
 	if(fs.existsSync(`${process.env.Admin_DB}/Admins.json`)) {
 		var AdminJson = JSON.parse(fs.readFileSync(`${process.env.Admin_DB}/Admins.json`));
 	}else{
@@ -46,4 +50,9 @@ bot.on(/^\/help/i, (msg) => {
 	}
 });
 
+bot.on([/^\/start/i, /^\/language/i, /^\/sprache/i], (msg) => {
+	msg.reply.text(`Bitte wähle deine Sprache.\n\nPlease choose your language.`);
+});
+
 bot.start();
+
