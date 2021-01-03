@@ -1,0 +1,17 @@
+{
+    "language": {
+        "de": "Deutsch",
+        "en": "Englisch"
+    },
+    "start": {
+        "Willkommen": "Willkommen zu EBG-Games\nBitte wähle deine Sprache aus.",
+        "NachSprachEinabe": "Sprachauswahl wurde gespeichert\n\nMit /hilfe kannst du alle Befehle abrufen die dir zur verfügung stehen.",
+        "UnknownError": "Es ist ein Unbekannter Fehler aufgetreten.",
+        "AlreadyReg": "Du bist bereits regestriert, bitte nutze /sprache um die Sprache zu ändern."
+    },
+    "sprache": {
+        "WurdeGeändert": "Deine Sprache wurde erfolgreich angepasst.",
+        "Message": "Bitte wähle die Sprache zu der du wechseln möchtest.",
+        "FehlendeRegestrierung": "Bitte regestriere dich zuerst mit /start"
+    }
+}

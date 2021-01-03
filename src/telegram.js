@@ -4,9 +4,9 @@ const OS = require('./lib/Hardware');
 const ping = require('ping');
 const package = require('../package');
 const fs = require('fs');
-const request = require("request");
+const SQL = require('./lib/MySQL')
 const newI18n = require('new-i18n');
-const i18n = newI18n(__dirname + '/languages', ['en', 'de']);
+const i18n = newI18n(__dirname + '/../languages', ['en', 'de'], 'de');
 
 const Telebot = require('telebot');
 const bot = new Telebot({
@@ -38,20 +38,125 @@ bot.on(/^\/alive/i, (msg) => {
 });
 
 bot.on([/^\/help/i, /^\/hilfe/i], (msg) => {
-	if(fs.existsSync(`${process.env.Admin_DB}/Admins.json`)) {
-		var AdminJson = JSON.parse(fs.readFileSync(`${process.env.Admin_DB}/Admins.json`));
-	}else{
-		msg.reply.text(`Es gibt noch keine Admins...`);
-	}
-	if(AdminJson["Admins"].includes(msg.from.id)){
-		msg.reply.text(`Befehle für Nutzer:\n/help - Zeigt diese Nachricht\n/alive - Zeigt den Bot Status\n\nBefehle für Admins:\n/listRoutes - Zeigt alle Plugins und beispiel\n/listRoutes <Plugin Name> - Zeigt alle Routs\n/routes - Zeigt Hilfe für diesen Befehl\n/routes add|rem <Pluginname> - Erstellt/Löscht Route für Chat\n/listAdmin - Zeigt alle Admins\n/addAdmin - Fügt Nutzer als Admin hinzu\n/remAdmin - Nimmt dem Nutzer Admin weg\n/listUser - Zeigt alle User\n/addUser - Fügt Nutzer als User hinzu\n/remUser - Nimmt dem Nutzer User weg`)
-	}else{
-		msg.reply.text(`Befehle für Nutzer:\n/help - Zeigt diese Nachricht\n/alive - Zeigt den Bot Status`);
-	}
+
 });
 
-bot.on([/^\/start/i, /^\/language/i, /^\/sprache/i], (msg) => {
-	msg.reply.text(`Bitte wähle deine Sprache.\n\nPlease choose your language.`);
+bot.on([/^\/start/i], (msg) => {
+
+	if ('language_code' in msg.from) {
+        if (i18n.languages.includes(msg.from.language_code)) {
+			var FirstLang = msg.from.language_code
+        }else{
+			var FirstLang = config.language
+		}
+    }else{
+		var FirstLang = config.language
+	}
+
+	let replyMarkup = bot.inlineKeyboard([
+		[
+			bot.inlineButton(i18n(FirstLang, 'language.de'), {callback: `${msg.from.id}_Clang_de`}),
+			bot.inlineButton(i18n(FirstLang, 'language.en'), {callback: `${msg.from.id}_Clang_en`})
+		]
+
+	]);
+	msg.reply.text(i18n(FirstLang, 'start.Willkommen'), {parseMode: 'html', replyMarkup}).catch(error => f.Elog('Error (SendStart):' + error.description));
+});
+
+bot.on([/^\/language/i, /^\/sprache/i], (msg) => {
+	SQL.GetUserLang(msg.from.id).then(function(lang) {
+		if(Object.entries(lang).length !== 0){
+			let replyMarkup = bot.inlineKeyboard([
+				[
+					bot.inlineButton(i18n(lang[0].language, 'language.de'), {callback: `${msg.from.id}_lang_de`}),
+					bot.inlineButton(i18n(lang[0].language, 'language.en'), {callback: `${msg.from.id}_lang_en`})
+				]
+
+			]);
+			msg.reply.text(i18n(lang[0].language, 'sprache.Message'), {parseMode: 'html', replyMarkup}).catch(error => f.Elog('Error (SendStart):' + error.description));
+		}else{
+			var Message = [];
+			for (i = 0; i < i18n.languages.length; i++) {
+				Message.push(i18n(i18n.languages[i], 'sprache.FehlendeRegestrierung'))
+			}
+			msg.reply.text(Message.join("\n"), {parseMode: 'html'}).catch(error => f.Elog('Error (SendStart):' + error.description));
+		}
+	}).catch(error => console.log(error));
+});
+
+bot.on('callbackQuery', (msg) => {
+	f.log("User: " + msg.from.username + "(" + msg.from.id + ") sended request with data " + msg.data)
+	
+	if ('inline_message_id' in msg) {	
+		var inlineId = msg.inline_message_id;
+	}else{
+		var chatId = msg.message.chat.id;
+		var messageId = msg.message.message_id;
+	}
+
+	var data = msg.data.split("_")
+	if(parseInt(data[0]) === msg.from.id)	//Button is only usable by the creator
+	{
+		if(data[1] === "Clang"){
+			SQL.CreateUser({UserID: msg.from.id, language: data[2]}).then(function(result) {
+				var Message = i18n(data[2], 'start.NachSprachEinabe')
+				if ('inline_message_id' in msg) {
+					bot.editMessageText(
+						{inlineMsgId: inlineId}, Message,
+						{parseMode: 'html'}
+					).catch(error => console.log('Error:', error));
+				}else{
+					bot.editMessageText(
+						{chatId: chatId, messageId: messageId}, Message,
+						{parseMode: 'html'}
+					).catch(error => console.log('Error:', error));
+				}
+			}).catch(function(error) {
+				var Message = "";
+					if(error.code === "ER_DUP_ENTRY"){
+						bot.answerCallbackQuery(msg.id,{
+							text: i18n(data[2], 'start.AlreadyReg'),
+						});
+						Message = i18n(data[2], 'start.AlreadyReg')
+					}else{
+						bot.answerCallbackQuery(msg.id,{
+							text: i18n(data[2], 'start.UnknownError'),
+						});
+						Message = i18n(data[2], 'start.UnknownError')
+					}
+					if ('inline_message_id' in msg) {
+						bot.editMessageText(
+							{inlineMsgId: inlineId}, Message,
+							{parseMode: 'html'}
+						).catch(error => console.log('Error:', error));
+					}else{
+						bot.editMessageText(
+							{chatId: chatId, messageId: messageId}, Message,
+							{parseMode: 'html'}
+						).catch(error => console.log('Error:', error));
+					}
+			});
+		}else if(data[1] === "lang"){
+			SQL.SetUserLang({UserID: msg.from.id, language: data[2]}).then(function(result) {
+				var Message = i18n(data[2], 'sprache.WurdeGeändert')
+				if ('inline_message_id' in msg) {
+					bot.editMessageText(
+						{inlineMsgId: inlineId}, Message,
+						{parseMode: 'html'}
+					).catch(error => console.log('Error:', error));
+				}else{
+					bot.editMessageText(
+						{chatId: chatId, messageId: messageId}, Message,
+						{parseMode: 'html'}
+					).catch(error => console.log('Error:', error));
+				}
+			}).catch(function(error) {
+				console.log(error)
+			});
+		}
+	}else{ 	//Usable by everyone
+
+	}
 });
 
 bot.start();
